@@ -1,6 +1,5 @@
 # Traefik OSS demo in K8s
 
-
 ## Set environment variable
 
 ```bash
