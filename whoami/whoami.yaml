@@ -1,0 +1,73 @@
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: apps
+
+---
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: whoami-deploy
+  namespace: apps
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: whoami
+  template:
+    metadata:
+      labels:
+        app: whoami
+    spec:
+      containers:
+      - name: whoami
+        image: traefik/whoami
+        imagePullPolicy: Always
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: whoami-svc
+  namespace: apps
+  labels:
+    app: whoami
+spec:
+  type: ClusterIP
+  ports:
+  - port: 80
+    name: whoami
+  selector:
+    app: whoami
+
+---
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: whoami-tls
+  namespace: apps
+spec:
+  entryPoints:
+    - websecure
+  routes:
+    - kind: Rule
+      match: Host(`whoami.${CLUSTERNAME}.demo.traefiklabs.tech`)
+      services:
+        - name: whoami-svc
+          port: 80
+      middlewares:
+      #  - name: whoami-header
+  tls: 
+    certResolver: letsencrypt
+
+---
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: whoami-header
+  namespace: apps
+spec:
+  headers:
+    customRequestHeaders:
+      X-HEADER-WHOAMI: "OSS"
